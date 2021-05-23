@@ -1,0 +1,1547 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.9.0">Jekyll</generator><link href="https://matklad.github.io//feed.xml" rel="self" type="application/atom+xml" /><link href="https://matklad.github.io//" rel="alternate" type="text/html" /><updated>2021-05-23T09:04:29+00:00</updated><id>https://matklad.github.io//feed.xml</id><title type="html">matklad</title><subtitle>Yet another programming blog by Aleksey Kladov aka matklad.
+</subtitle><author><name>Aleksey Kladov</name></author><entry><title type="html">Design Pattern: Kitchen Sink</title><link href="https://matklad.github.io//2021/05/12/design-pattern-dumping-ground.html" rel="alternate" type="text/html" title="Design Pattern: Kitchen Sink" /><published>2021-05-12T00:00:00+00:00</published><updated>2021-05-12T00:00:00+00:00</updated><id>https://matklad.github.io//2021/05/12/design-pattern-dumping-ground</id><content type="html" xml:base="https://matklad.github.io//2021/05/12/design-pattern-dumping-ground.html">&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;These are the notes on a design pattern I noticed in several contexts.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Suppose, metaphorically, you have a neatly organized bookcase which categorizes the books by their topics.
+And now, suppose you&amp;#8217;ve got a new book, which doesn&amp;#8217;t fit clearly into any existing category.
+What would you do?&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Here are some common solution I&amp;#8217;ve seen:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;ulist&quot;&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Put the book somewhere in the bookcase.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Start rearranging the shelves until you have a proper topic for this new book.
+Maybe introduce a dedicated topic just for this single book.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Don&amp;#8217;t store the book in the bookcase, keep it on the bedside table.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Here&amp;#8217;s the &amp;#8220;kitchen sink pattern&amp;#8221; solution for this problem: have the &amp;#8220;Uncategorized&amp;#8221; shelf for books which don&amp;#8217;t clearly fit into the existing hierarchy.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;The idea here is that the overall organization becomes better, if you explicitly designate some place as &amp;#8220;stuff that doesn&amp;#8217;t fit goes here by default&amp;#8221;.
+Let&amp;#8217;s see the examples.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;&lt;em&gt;First&lt;/em&gt;, the Django web framework has a &lt;code&gt;shortcuts&lt;/code&gt; module with contains conveniences functions, not fitting model/view separation.
+The &lt;code&gt;get_object_or_404&lt;/code&gt; function lookups an object in the database and returns HTTP404 if it is not found.
+Models (SQL) and views (HTTP) don&amp;#8217;t know about each other, so the function doesn&amp;#8217;t belong to either of these modules.
+Placing it in &lt;code&gt;shortcuts&lt;/code&gt; allows this separation to be more crisp.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;&lt;em&gt;Second&lt;/em&gt;, I have two tricks to keep my home folder organized.
+I have a script that clears &lt;code&gt;~/downloads&lt;/code&gt; on every reboot, and I have a &lt;code&gt;~/tmp&lt;/code&gt; as my dumping ground.
+Before &lt;code&gt;~/tmp&lt;/code&gt;, various semi-transient things polluted my otherwise perfectly organized workspace.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;&lt;em&gt;Third&lt;/em&gt;, I asked my colleague recently about some testing infrastructure.
+They replied that they have a extensive document for it in their fork, because it&amp;#8217;s unclear what&amp;#8217;s the proper place for it in the main repo.
+In this case the absence of a &amp;#8220;dumping ground&amp;#8221; prevented useful work for no good reason.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;&lt;em&gt;Fourth&lt;/em&gt;, in &lt;code&gt;rust-analyzer&lt;/code&gt; we have a &lt;code&gt;ast::make&lt;/code&gt; module which is intended to contain the minimal orthogonal set of constructors for AST nodes.
+Historically, people kept adding non-minimal, non-orthogonal constructors there as well.
+Useful work was done, but it muddied the design.
+This was fixed by adding a dedicated &lt;code&gt;ast::make::ext&lt;/code&gt; submodule for convenient shortcuts.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;&lt;em&gt;Fifth&lt;/em&gt;, for big projects I like having &lt;code&gt;stdext&lt;/code&gt; modules, which fill-in missing batteries for the standard library.
+Without it, various modules tend to accumulate unrelated, and often slightly duplicated, functionality.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;To sum up, many classifications work best if there is an explicit &amp;#8220;can&amp;#8217;t classify this&amp;#8221; category.
+If there&amp;#8217;s no obvious place to put things which don&amp;#8217;t fit, a solid design might erode with time.
+Note that for this pattern to be useful, an existence of a good solid design is per-requisite, lest all the code ends up in an &lt;code&gt;utils&lt;/code&gt; module.&lt;/p&gt;
+&lt;/div&gt;</content><author><name>Aleksey Kladov</name></author><summary type="html">These are the notes on a design pattern I noticed in several contexts.</summary></entry><entry><title type="html">Concurrent Expression Problem</title><link href="https://matklad.github.io//2021/04/26/concurrent-expression-problem.html" rel="alternate" type="text/html" title="Concurrent Expression Problem" /><published>2021-04-26T00:00:00+00:00</published><updated>2021-04-26T00:00:00+00:00</updated><id>https://matklad.github.io//2021/04/26/concurrent-expression-problem</id><content type="html" xml:base="https://matklad.github.io//2021/04/26/concurrent-expression-problem.html">&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I am struggling with designing concurrent code.
+In this post, I want to share a model problem which exemplifies some of the issues.
+It is reminiscent of the famous expression problem in that there&amp;#8217;s a two dimensional design grid, and a win along one dimension translates to a loss along the other.
+If you want a refresher on the expression problem (not required to understand this article), take a look at &lt;a href=&quot;https://www.tedinski.com/2018/02/27/the-expression-problem.html&quot;&gt;this post&lt;/a&gt;.
+It&amp;#8217;s not canonical, but I like it.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Without further ado, concurrent expression problem:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sidebarblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Define a set of concurrent activities which interact with shared mutable state with invariants, such that it is easy to introduce new activities and additional invariants.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I am not sure that&amp;#8217;s exactly the right formulation, I feel like I am straining it a bit to fit the expression problem shape.
+The explanation that follows matters more.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I think there are two ways to code the system described.
+The first approach is to us a separate thread / goroutine / async task for each concurrent activity, with some synchronization around the access to the shared state.
+The alternative approach is to write an explicit state machine / actor loop to receive the next event and process it.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;In the first scheme, adding new activities is easy, as you just write strait-line code with maybe some &lt;code&gt;.await&lt;/code&gt;s here and there.
+In the second scheme, it&amp;#8217;s easy to check and act on invariants, as there is only a single place where the state is modified.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Let&amp;#8217;s take a look at a concrete example.
+We&amp;#8217;ll be using a pseudo code for a language with cooperative concurrency and explicit yield points (think Python with async/await).&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;The state consists of two counters.
+One activity decrements the first counter every second.
+The other activity does the same to the other counter.
+When &lt;em&gt;both&lt;/em&gt; counters reach zero, we want to print something.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;The first approach would look roughly like this:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt; 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;State&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;u32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;u32&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;async&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;act1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;State&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nf&quot;&gt;sleep&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;.await&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;both are zero&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;async&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;act2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;State&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nf&quot;&gt;sleep&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;.await&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;both are zero&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;And the second one like this:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt; 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;async&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;State&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;loop&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;event&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;next_event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;.await&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;match&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;event&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;nn&quot;&gt;Event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Dec1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+          &lt;span class=&quot;nf&quot;&gt;send_event_with_delay&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nn&quot;&gt;Event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Dec1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+      &lt;span class=&quot;nn&quot;&gt;Event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Dec2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+          &lt;span class=&quot;nf&quot;&gt;send_event_with_delay&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nn&quot;&gt;Event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Dec2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.c2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;both are zero&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;It&amp;#8217;s much easier to see what the concurrent activities are in the first case.
+It&amp;#8217;s more clear how the overall state evolves in the second case.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;The second approach also gives you more control&amp;#8201;&amp;#8212;&amp;#8201;if several events are ready, you can process them in the order of priority (usually it makes sense to prioritize writes over reads).
+You can trivially add some logging at the start and end of the loop to collect data about slow events and overall latency.
+But the hit to the programming model is big.
+If you are new to the code and don&amp;#8217;t know which conceptual activities are there, it&amp;#8217;s hard to figure out that just from the code.
+The core issue is that causal links between asynchronous events are not reified in the code:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt; 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;match&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nn&quot;&gt;Event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;X&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;do_x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+  &lt;span class=&quot;nn&quot;&gt;Event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Y&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;do_y&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;// vs&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;async&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;do_xy&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;do_x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;.await&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;do_y&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;.await&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;</content><author><name>Aleksey Kladov</name></author><summary type="html">I am struggling with designing concurrent code. In this post, I want to share a model problem which exemplifies some of the issues. It is reminiscent of the famous expression problem in that there&amp;#8217;s a two dimensional design grid, and a win along one dimension translates to a loss along the other. If you want a refresher on the expression problem (not required to understand this article), take a look at this post. It&amp;#8217;s not canonical, but I like it.</summary></entry><entry><title type="html">Async Benchmarks Index</title><link href="https://matklad.github.io//2021/03/22/async-benchmarks-index.html" rel="alternate" type="text/html" title="Async Benchmarks Index" /><published>2021-03-22T00:00:00+00:00</published><updated>2021-03-22T00:00:00+00:00</updated><id>https://matklad.github.io//2021/03/22/async-benchmarks-index</id><content type="html" xml:base="https://matklad.github.io//2021/03/22/async-benchmarks-index.html">&lt;div id=&quot;preamble&quot;&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I don&amp;#8217;t understand performance characteristics of &amp;#8220;async&amp;#8221; programming when applied to typical HTTP based web applications.
+Let&amp;#8217;s say we have a CRUD app with a relational database, where a typical request results in N queries to the database and transfers M bytes over the network.
+How much (orders of magnitude?) faster/slower would an &amp;#8220;async&amp;#8221; solution be in comparison to a &amp;#8220;threaded&amp;#8221; solution?&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;In this &lt;em&gt;live&lt;/em&gt; post, I am collecting the benchmarks that help to shed the light on this and related questions.
+Note that I am definitely not the right person to do this work, so, if there is a better resource, I&amp;#8217;ll gladly just use that instead.
+Feel free to &lt;a href=&quot;https://github.com/matklad/matklad.github.io/edit/master/_posts/2021-03-22-async-benchmarks-index.adoc&quot;&gt;send pull requests&lt;/a&gt; with benchmarks!
+Every benchmark will be added, but some might go to the rejected section.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I am interested in understanding differences between several execution models, regardless of programming language:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;dlist&quot;&gt;
+&lt;dl&gt;
+&lt;dt class=&quot;hdlist1&quot;&gt;Threads&lt;/dt&gt;
+&lt;dd&gt;
+&lt;p&gt;Good old POSIX threads, as implemented on modern Linux.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dt class=&quot;hdlist1&quot;&gt;Stackful Coroutines&lt;/dt&gt;
+&lt;dd&gt;
+&lt;p&gt;M:N threading, which expose the same programming model as threads, but are implemented by multiplexing several user-space coroutines over a single OS-level thread.
+The most prominent example here is Go&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dt class=&quot;hdlist1&quot;&gt;Stackless Coroutines&lt;/dt&gt;
+&lt;dd&gt;
+&lt;p&gt;In this model, each concurrent computation is represented by a fixed-size state machine which reacts to events.
+This model often uses &lt;code&gt;async / await&lt;/code&gt; syntax for describing and composing state machines using standard control flow constructs.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dt class=&quot;hdlist1&quot;&gt;Threads With Cooperative Scheduling&lt;/dt&gt;
+&lt;dd&gt;
+&lt;p&gt;This is a mostly hypothetical model of OS threads with an additional primitive for directly switching between two threads of the same process.
+It is not implemented on Linux (see &lt;a href=&quot;https://www.youtube.com/watch?v=KXuZi9aeGTw&quot;&gt;this presentation&lt;/a&gt; for some old work towards that).
+It is implemented on Windows under the &amp;#8220;fiber&amp;#8221; branding.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I am also interested in Rust&amp;#8217;s specific implementation of stackless coroutines&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;benchmarks&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#benchmarks&quot;&gt;&lt;/a&gt;Benchmarks&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;dlist&quot;&gt;
+&lt;dl&gt;
+&lt;dt class=&quot;hdlist1&quot;&gt;&lt;a href=&quot;https://github.com/jimblandy/context-switch&quot; class=&quot;bare&quot;&gt;https://github.com/jimblandy/context-switch&lt;/a&gt;&lt;/dt&gt;
+&lt;dd&gt;
+&lt;p&gt;This is a micro benchmark comparing the cost of primitive operations of threads and stackless as implemented in Rust coroutines.
+Findings:&lt;/p&gt;
+&lt;div class=&quot;ulist&quot;&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Thread creation is order of magnitude slower&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Threads use order of magnitude more RAM.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;IO-related context switches take the same time&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Thread-to-thread context switches (channel sends) take the same time, &lt;em&gt;if&lt;/em&gt; threads are pinned to one core.
+This is surprising to me.
+I&amp;#8217;d expect channel send to be significantly more efficient for either stackful or stackless coroutines.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Thread-to-thread context switches are order of magnitude slower if there&amp;#8217;s no pinning&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Threads hit non-memory resource limitations quickly (it&amp;#8217;s hard to spawn &amp;gt; 50k threads).&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;/dd&gt;
+&lt;dt class=&quot;hdlist1&quot;&gt;&lt;a href=&quot;https://github.com/jkarneges/rust-async-bench&quot; class=&quot;bare&quot;&gt;https://github.com/jkarneges/rust-async-bench&lt;/a&gt;&lt;/dt&gt;
+&lt;dd&gt;
+&lt;p&gt;Micro benchmark which compares Rust&amp;#8217;s implementation of stackless coroutines with a manually coded state machine.
+Rust&amp;#8217;s async/await turns out to not be zero-cost, pure overhead is about 4x.
+The absolute numbers are still low though, and adding even a single syscall of work reduces the difference to only 10%&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dt class=&quot;hdlist1&quot;&gt;&lt;a href=&quot;https://matklad.github.io/2021/03/12/goroutines-are-not-significantly-smaller-than-threads.html&quot; class=&quot;bare&quot;&gt;https://matklad.github.io/2021/03/12/goroutines-are-not-significantly-smaller-than-threads.html&lt;/a&gt;&lt;/dt&gt;
+&lt;dd&gt;
+&lt;p&gt;This is a micro benchmark comparing just the memory overhead of threads and stackful coroutines as implemented in Go.
+Threads are &amp;#8220;times&amp;#8221;, but not &amp;#8220;orders of magnitude&amp;#8221; larger.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dt class=&quot;hdlist1&quot;&gt;&lt;a href=&quot;https://calpaterson.com/async-python-is-not-faster.html&quot; class=&quot;bare&quot;&gt;https://calpaterson.com/async-python-is-not-faster.html&lt;/a&gt;&lt;/dt&gt;
+&lt;dd&gt;
+&lt;p&gt;Macro benchmark which compares many different Python web frameworks.
+The conclusion is that &lt;code&gt;async&lt;/code&gt; is worse for both latency and throughput.
+Note two important things.
+&lt;em&gt;First&lt;/em&gt;, the servers are run behind a reverse proxy (nginx), which drastically changes IO patterns that are observed by the server.
+&lt;em&gt;Second&lt;/em&gt;, Python is not the fastest language, so throughput is roughly correlated with the amount of C code in the stack.&lt;/p&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;There is also &lt;a href=&quot;https://blog.miguelgrinberg.com/post/ignore-all-web-performance-benchmarks-including-this-one&quot;&gt;a rebuttal post&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;rejected-benchmarks&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#rejected-benchmarks&quot;&gt;&lt;/a&gt;Rejected Benchmarks&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;dlist&quot;&gt;
+&lt;dl&gt;
+&lt;dt class=&quot;hdlist1&quot;&gt;&lt;a href=&quot;https://matej.laitl.cz/bench-actix-rocket/&quot; class=&quot;bare&quot;&gt;https://matej.laitl.cz/bench-actix-rocket/&lt;/a&gt;&lt;/dt&gt;
+&lt;dd&gt;
+&lt;p&gt;This is a macro benchmark comparing performance of sync and async Rust web servers.
+This is the kind of benchmark I want to see, and the analysis is exceptionally good.
+Sadly, a big part of the analysis is fighting with unreleased version of software and working around bugs, so I don&amp;#8217;t trust that the results are representative.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dt class=&quot;hdlist1&quot;&gt;&lt;a href=&quot;https://www.techempower.com/benchmarks/&quot; class=&quot;bare&quot;&gt;https://www.techempower.com/benchmarks/&lt;/a&gt;&lt;/dt&gt;
+&lt;dd&gt;
+&lt;p&gt;This is a micro benchmark that pretends to be a macro benchmark.
+The code is overly optimized to fit a very specific task.
+I don&amp;#8217;t think the results are easily transferable to real-world applications.
+At the same time, lack of the analysis and the &amp;#8220;macro&amp;#8221; scale of the task itself doesn&amp;#8217;t help with building a mental model for explaining the observed performance.&lt;/p&gt;
+&lt;/dd&gt;
+&lt;dt class=&quot;hdlist1&quot;&gt;&lt;a href=&quot;https://inside.java/2020/08/07/loom-performance&quot; class=&quot;bare&quot;&gt;https://inside.java/2020/08/07/loom-performance&lt;/a&gt;&lt;/dt&gt;
+&lt;dd&gt;
+&lt;p&gt;The opposite of a benchmark actually.
+This post gives a good theoretical overview of why async might lead to performance improvements.
+Sadly, it drops the ball when it comes to practice:&lt;/p&gt;
+&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;/div&gt;
+&lt;div class=&quot;quoteblock&quot;&gt;
+&lt;blockquote&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;millions of user-mode threads instead of the meager thousands the OS can support.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/blockquote&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;What is the limiting factor for OS threads?&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;</content><author><name>Aleksey Kladov</name></author><summary type="html">I don&amp;#8217;t understand performance characteristics of &amp;#8220;async&amp;#8221; programming when applied to typical HTTP based web applications. Let&amp;#8217;s say we have a CRUD app with a relational database, where a typical request results in N queries to the database and transfers M bytes over the network. How much (orders of magnitude?) faster/slower would an &amp;#8220;async&amp;#8221; solution be in comparison to a &amp;#8220;threaded&amp;#8221; solution?</summary></entry><entry><title type="html">Goroutines Are Not Significantly Smaller Than Threads</title><link href="https://matklad.github.io//2021/03/12/goroutines-are-not-significantly-smaller-than-threads.html" rel="alternate" type="text/html" title="Goroutines Are Not Significantly Smaller Than Threads" /><published>2021-03-12T00:00:00+00:00</published><updated>2021-03-12T00:00:00+00:00</updated><id>https://matklad.github.io//2021/03/12/goroutines-are-not-significantly-smaller-than-threads</id><content type="html" xml:base="https://matklad.github.io//2021/03/12/goroutines-are-not-significantly-smaller-than-threads.html">&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;The most commonly cited drawback of OS-level threads is that they use a lot of RAM.
+This is not true on Linux.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Let&amp;#8217;s compare memory footprint of 10_000 Linux threads with 10_000 goroutines.
+We spawn 10k workers, which sleep for about 10 seconds, waking up every 10 milliseconds.
+Each worker is staggered by a pseudorandom delay up to 200 milliseconds to avoid the thundering herd problem.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;title&quot;&gt;main.rs&lt;/div&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt; 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;use&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;thread&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;time&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Duration&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;mut&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;threads&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Vec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0u32&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10_000&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;t&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;thread&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;spawn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;move&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bad_hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.wrapping_mul&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2654435761&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;200_000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+            &lt;span class=&quot;nn&quot;&gt;thread&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;sleep&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nn&quot;&gt;Duration&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;from_micros&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bad_hash&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;u64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1000&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+                &lt;span class=&quot;nn&quot;&gt;thread&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;sleep&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nn&quot;&gt;Duration&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;from_millis&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;threads&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.push&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;threads&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.join&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.unwrap&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;title&quot;&gt;main.go&lt;/div&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;go&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt; 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;package&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;s&quot;&gt;&quot;sync&quot;&lt;/span&gt;
+    &lt;span class=&quot;s&quot;&gt;&quot;time&quot;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;wg&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sync&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;WaitGroup&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;uint32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;_000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;++&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;wg&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;go&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;func&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;defer&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;wg&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Done&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;bad_hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;2654435761&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;200&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;_000&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;time&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Sleep&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;time&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Duration&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bad_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;time&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Microsecond&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;j&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;j&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;j&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;++&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;time&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Sleep&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;10&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;time&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Millisecond&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}()&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;wg&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Wait&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;We use &lt;code&gt;time&lt;/code&gt; utility to measure memory usage:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;title&quot;&gt;t&lt;/div&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;sh&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/sh&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;command time&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--format&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'real %es\nuser %Us\nsys  %Ss\nrss  %Mk'&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$@&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;The results:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt; 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;λ rustc main.rs -C opt-level=3 &amp;amp;&amp;amp; ./t ./main
+real 10.35s
+user 4.96s
+sys  16.06s
+rss  94472k
+
+λ go build main.go &amp;amp;&amp;amp; ./t ./main
+real 10.92s
+user 13.30s
+sys  0.55s
+rss  34924k
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;A thread is only &lt;strong&gt;3&lt;/strong&gt; times as large as a goroutine.
+Absolute numbers are also significant: 10k threads require only 100 megabytes of overhead.
+If the application does 10k concurrent things, 100mb might be negligible.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sidebarblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;div class=&quot;title&quot;&gt;Correction&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;As pointed out in comments, using solely RSS to compare memory usage of goroutines and threads is wrong.
+Thread bookkeeping is managed by the kernel, using kernel&amp;#8217;s own data structures, so not all overhead is accounted for by RSS.
+In contrast, goroutines are managed by the userspace, and RSS does account for this.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;In particular, 10k threads with default stack sizes need about 40mb of page tables to map virtual memory.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;hr&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Note that it is wrong to use this benchmark to compare performance of threads and goroutines.
+The workload is representative for measuring absolute memory overhead, but is not representative for time overhead.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;That being said, it is possible to explain why threads need 21 seconds of CPU time while goroutines need only 14.
+Go runtime spawns a thread per CPU-core, and tries hard to keep each goroutine tied to specific thread (and, by extension, CPU).
+Threads by default migrate between CPUs, which incurs synchronization overhead.
+Pinning threads to cores in a round-robin fashion removes this overhead:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;λ cargo build --release &amp;amp;&amp;amp; ./t ./target/release/main --pin-to-core
+    Finished release [optimized] target(s) in 0.00s
+real 10.36s
+user 3.01s
+sys  9.08s
+rss  94856k
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;The total CPU time now is approximately the same, but the distribution is different.
+On this workload, goroutine scheduler spends roughly the same amount of cycles in the userspace that the thread scheduler spends in the kernel.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Code for the benchmarks is available here: &lt;a href=&quot;https://github.com/matklad/10k_linux_threads&quot;&gt;matklad/10k_linux_threads&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;</content><author><name>Aleksey Kladov</name></author><summary type="html">The most commonly cited drawback of OS-level threads is that they use a lot of RAM. This is not true on Linux.</summary></entry><entry><title type="html">Delete Cargo Integration Tests</title><link href="https://matklad.github.io//2021/02/27/delete-cargo-integration-tests.html" rel="alternate" type="text/html" title="Delete Cargo Integration Tests" /><published>2021-02-27T00:00:00+00:00</published><updated>2021-02-27T00:00:00+00:00</updated><id>https://matklad.github.io//2021/02/27/delete-cargo-integration-tests</id><content type="html" xml:base="https://matklad.github.io//2021/02/27/delete-cargo-integration-tests.html">&lt;div id=&quot;preamble&quot;&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Click bait title!
+We&amp;#8217;ll actually look into how integration and unit tests are implemented in Cargo.
+A few guidelines for organizing test suites in large Cargo projects naturally arise out of these implementation differences.
+And, yes, one of those guidelines will turn out to be: &amp;#8220;delete all integration tests but one&amp;#8221;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Keep in mind that this post is explicitly only about Cargo concepts.
+It doesn&amp;#8217;t discuss relative merits of integration or unit styles of testing.
+I&amp;#8217;d love to, but that&amp;#8217;s going to be a loooong article some other day!&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;loomings&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#loomings&quot;&gt;&lt;/a&gt;Loomings 🐳&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;When you use Cargo, you can put &lt;code&gt;#[test]&lt;/code&gt; functions directly next to code, in files inside &lt;code&gt;src/&lt;/code&gt; directory.
+Alternatively, you can put them into dedicated files inside &lt;code&gt;tests/&lt;/code&gt;:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt; 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;awesomeness-rs/
+  Cargo.toml
+&lt;span class=&quot;hll&quot;&gt;  src/          # unit tests go here
+&lt;/span&gt;    lib.rs
+    submodule.rs
+    submodule/
+      tests.rs
+
+&lt;span class=&quot;hll&quot;&gt;  tests/        # integration tests go here
+&lt;/span&gt;    is_awesome.rs
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I stress that unit/integration terminology is based purely on the location of the &lt;code&gt;#[test]&lt;/code&gt; functions, and not on what those functions actually do.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;To build unit tests, Cargo runs&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;rustc --test src/lib.rs
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Rustc then compiles the library with &lt;code&gt;--cfg test&lt;/code&gt;.
+It also injects a generated &lt;code&gt;fn main()&lt;/code&gt;, which invokes all functions annotated with &lt;code&gt;#[test]&lt;/code&gt;.
+The result is an executable file which, when run subsequently by Cargo, executes the tests.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Integration tests are build differently.
+First, Cargo uses &lt;code&gt;rustc&lt;/code&gt; to compile the library as usual, &lt;em&gt;without&lt;/em&gt; &lt;code&gt;--cfg test&lt;/code&gt;:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;rustc --crate-type=rlib src/lib.rs
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;This produces an &lt;code&gt;.rlib&lt;/code&gt; file&amp;#8201;&amp;#8212;&amp;#8201;a compiled library.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Then, for &lt;em&gt;each&lt;/em&gt; file in the tests directory, Cargo runs the equivalent of&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;rustc --test --extern awesomeness=path/to/awesomeness.rlib \
+    ./tests/is_awesome.rs
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;That is, each integration test is compiled into a separate binary.
+Running those binaries executes the test functions.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;implications&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#implications&quot;&gt;&lt;/a&gt;Implications&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Note that &lt;code&gt;rustc&lt;/code&gt; needs to repeatedly re-link the library crate with each of the integration tests.
+This can add up to a significant compilation time blow up for tests.
+That is why I recommend that large projects should have only one integration test crate with several modules.
+That is, don&amp;#8217;t do this:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;tests/
+  foo.rs
+  bar.rs
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Do this instead:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;tests/
+  integration/
+    main.rs
+    foo.rs
+    bar.rs
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;When a refactoring along these lines was applied to Cargo itself, the effects were substantial (&lt;a href=&quot;https://github.com/rust-lang/cargo/pull/5022#issuecomment-364691154&quot;&gt;numbers&lt;/a&gt;).
+The time to compile the test suite decreased 3x.
+The size of on-disk artifacts decreased 5x.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;It can&amp;#8217;t get better than this, right?
+Wrong!
+Rust tests by default are run in parallel.
+The &lt;code&gt;main&lt;/code&gt; that is generated by &lt;code&gt;rustc&lt;/code&gt; spawns several threads to saturate all of the CPU cores.
+However, Cargo itself runs test binaries sequentially.
+This makes sense&amp;#8201;&amp;#8212;&amp;#8201;otherwise, concurrently executing test binaries oversubscribe the CPU.
+But this means that multiple integration tests leave performance on the table.
+The critical path is the sum of longest tests in each binary.
+The more binaries, the longer the path.
+For one of my projects, consolidating several integration tests into one reduced the time to run the test suite from 20 seconds to just 13.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;A nice side-effect of a single modularized integration test is that sharing the code between separate tests becomes trivial, you just pull it into a submodule.
+There&amp;#8217;s no need to awkwardly repeat &lt;code&gt;mod common;&lt;/code&gt; for each integration test.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;rules-of-thumb&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#rules-of-thumb&quot;&gt;&lt;/a&gt;Rules of Thumb&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;If the project I am working with is small, I don&amp;#8217;t worry about test organization.
+There&amp;#8217;s no need to make tests twice as fast if they are already nearly instant.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Conversely, if the project is large (a workspace with many crates) I worry about test organization a lot.
+Slow tests are a boiling frog kind of problem.
+If you do not proactively fix it, everything is fine up until the moment you realize you need to sink a week to untangle the mess.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;For a library with a public API which is published to crates.io, I avoid unit tests.
+Instead, I use a single integration tests, called &lt;code&gt;&lt;strong&gt;it&lt;/strong&gt;&lt;/code&gt; (&lt;strong&gt;i&lt;/strong&gt;ntegration &lt;strong&gt;t&lt;/strong&gt;est):&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt; 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;tests/
+  it.rs
+
+# Or, for larger crates
+
+tests/
+  it/
+    main.rs
+    foo.rs
+    bar.rs
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Integration tests use the library as an external crate.
+This forces the usage of the same public API that consumers use, resulting in a better design feedback.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;For an internal library, I avoid integration tests all together.
+Instead, I use Cargo unit tests for &quot;integration&quot; bits:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;src/
+  lib.rs
+  tests.rs
+  tests/
+    foo.rs
+    bar.rs
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;That way, I avoid linking the separate integration tests binary altogether.
+I also have access to non-&lt;code&gt;pub&lt;/code&gt; API of the crate, which is often useful.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;assorted-tricks&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#assorted-tricks&quot;&gt;&lt;/a&gt;Assorted Tricks&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;&lt;em&gt;First&lt;/em&gt;, documentation tests are extremely slow.
+Each doc test is linked as a separate binary.
+For this reason, avoid doc tests in internal libraries for big projects and add this to &lt;code&gt;Cargo.toml&lt;/code&gt;:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;toml&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;nn&quot;&gt;[lib]&lt;/span&gt;
+&lt;span class=&quot;py&quot;&gt;doctest&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;&lt;em&gt;Second&lt;/em&gt;, prefer&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;nd&quot;&gt;#[cfg(test)]&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;mod&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tests&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;// tests in `tests.rs` file&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;to&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;nd&quot;&gt;#[cfg(test)]&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;mod&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tests&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c&quot;&gt;// tests here&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;This way, when you modify just the tests, the cargo is smart to not recompile the library crate.
+It knows that the contents of &lt;code&gt;tests.rs&lt;/code&gt; only affects compilation when &lt;code&gt;--test&lt;/code&gt; is passed to rustc.
+Learned this one from &lt;a href=&quot;https://github.com/petrochenkov&quot;&gt;@petrochenkov&lt;/a&gt;, thanks!&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;&lt;em&gt;Third&lt;/em&gt;, even if you stick to unit tests, the library is recompiled twice: once with, and once without &lt;code&gt;--test&lt;/code&gt;.
+For this reason, folks from &lt;a href=&quot;https://pernos.co&quot;&gt;pernosco&lt;/a&gt; go even further.
+They add&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock toml&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;[lib]
+test = false
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;to &lt;code&gt;Cargo.toml&lt;/code&gt;, make all APIs they want to unit test public and have a single test crate for the whole workspace.
+This crates links everything and contains all the unit tests.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Discussion on &lt;a href=&quot;https://old.reddit.com/r/rust/comments/lto0qa/blog_post_delete_cargo_integration_tests/&quot;&gt;/r/rust&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;</content><author><name>Aleksey Kladov</name></author><summary type="html">Click bait title! We&amp;#8217;ll actually look into how integration and unit tests are implemented in Cargo. A few guidelines for organizing test suites in large Cargo projects naturally arise out of these implementation differences. And, yes, one of those guidelines will turn out to be: &amp;#8220;delete all integration tests but one&amp;#8221;.</summary></entry><entry><title type="html">Another Generic Dilemma</title><link href="https://matklad.github.io//2021/02/24/another-generic-dilemma.html" rel="alternate" type="text/html" title="Another Generic Dilemma" /><published>2021-02-24T00:00:00+00:00</published><updated>2021-02-24T00:00:00+00:00</updated><id>https://matklad.github.io//2021/02/24/another-generic-dilemma</id><content type="html" xml:base="https://matklad.github.io//2021/02/24/another-generic-dilemma.html">&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;In &lt;a href=&quot;https://research.swtch.com/generic&quot;&gt;&amp;#8220;The Generic Dilemma&amp;#8221;&lt;/a&gt;, Russ Cox observes that you can have only two of&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;ulist&quot;&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;separate compilation&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;unboxed values&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;parametric polymorphism&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;(but see &lt;a href=&quot;https://www.youtube.com/watch?v=ctS8FzqcRug&quot;&gt;1&lt;/a&gt; and &lt;a href=&quot;https://gankra.github.io/blah/swift-abi/&quot;&gt;2&lt;/a&gt; for how you can achieve a middle ground with enough compiler wizardry)&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Now that &lt;a href=&quot;https://blog.golang.org/generics-proposal&quot;&gt;Go is getting generics&lt;/a&gt;, I want to point out another dilemma:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;&lt;strong&gt;Any language has parametric polymorphism, eventually&lt;/strong&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;If you start with just dynamic dispatch, you&amp;#8217;ll end up adding generics down the road.
+This happened with C&amp;#43;&amp;#43; and Java, and is now happening with Go.
+The last one is interesting&amp;#8201;&amp;#8212;&amp;#8201;even if you don&amp;#8217;t carry accidental OOP baggage (inheritance), interfaces alone are not enough.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Why does it happen?
+Well, because generics are useful for simple things.
+Even if the language special-cases several parametric data structures, like go does with slices, maps and channels, it is impossible to abstract over them.
+In particular, it&amp;#8217;s impossible to write &lt;code&gt;list_reverse&lt;/code&gt; or &lt;code&gt;list_sort&lt;/code&gt; functions without some awkward workarounds.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Ok, but where&amp;#8217;s the dilemma?
+The dilemma is that adding parametric polymorphism to the language opens floodgates of complexity.
+At least in my experience, Rust traits, Haskell type classes, and Java generics are the main reason why some libraries in those languages are hard to use.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;It&amp;#8217;s not that generics are inherently hard, &lt;code&gt;fn reverse&amp;lt;T&amp;gt;(xs: [T]) -&amp;gt; [T]&lt;/code&gt; is simple.
+It&amp;#8217;s that they allow creating complicated solutions, and this doesn&amp;#8217;t play well with our human bias for complexity.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;One thing I am wondering is whether a polymorphic language without bounded quantification would be practical?
+Again, in my anecdotal experience, cognitive complexity soars when there are bounds on type parameters: &lt;code&gt;T: This&amp;lt;S&amp;gt; + That&lt;/code&gt;.
+But parametric polymorphism can be useful without them:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sort&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Ord&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;mut&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;...&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;is equivalent to&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Ord&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;cmp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ordering&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sort&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ord&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Ord&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;xs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;mut&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;...&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Can we build an entire language out of this pattern?&lt;/p&gt;
+&lt;/div&gt;</content><author><name>Aleksey Kladov</name></author><summary type="html">In &amp;#8220;The Generic Dilemma&amp;#8221;, Russ Cox observes that you can have only two of</summary></entry><entry><title type="html">matklad @ NEAR</title><link href="https://matklad.github.io//2021/02/15/NEAR.html" rel="alternate" type="text/html" title="matklad @ NEAR" /><published>2021-02-15T00:00:00+00:00</published><updated>2021-02-15T00:00:00+00:00</updated><id>https://matklad.github.io//2021/02/15/NEAR</id><content type="html" xml:base="https://matklad.github.io//2021/02/15/NEAR.html">&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Hey, I have a short announcement to make: I am joining &lt;a href=&quot;https://near.org&quot;&gt;NEAR&lt;/a&gt; (sharded proof of stake public blockchain)!
+TL;DR: I&amp;#8217;ll be spending 60% of my time on WASM runtime for smart contracts and 40% on rust-analyzer.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Why NEAR?
+One of the problems I have with current popular blockchain technologies is that they are not scalable.
+Every node needs to process every transaction in the network.
+For a network of with &lt;code&gt;N&lt;/code&gt; nodes that is roughly &lt;code&gt;O(N^2)&lt;/code&gt; total work.
+NEAR aims to solve exactly this problem using the classic big data trick&amp;#8201;&amp;#8212;&amp;#8201;sharding the data across several partitions.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Another aspect of NEAR I am particularly excited about is the strategic focus on the smart contract&amp;#8217;s developer experience.
+That&amp;#8217;s why NEAR is particularly interested in supporting rust-analyzer.
+Rust, with its top-notch WASM ecosystem and focus on correctness is a natural choice for writing contracts.
+At the same time, it is not the most approachable language there is.
+Good tooling can help a lot with surmounting the language&amp;#8217;s inherent complexity, making writing smart contracts in Rust easy.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;What does it mean for rust-analyzer?
+We&amp;#8217;ll see: I am still be putting significant hours into it, although a bit less than previously.
+I&amp;#8217;ll also help to manage rust-analyzer &lt;a href=&quot;https://opencollective.com/rust-analyzer&quot;&gt;Open Collective&lt;/a&gt;.
+And, naturally, my know-how about building IDEs isn&amp;#8217;t going anywhere :)
+At the same time, I am excited about lowering the bus factor and distributing rust-analyzer maintainership.
+I do want to take credit for initiating the effort, but it&amp;#8217;s high time for some structured leadership rotation.
+It&amp;#8217;s exciting to see &lt;a href=&quot;https://github.com/jonas-schievink&quot;&gt;@jonas-schievink&lt;/a&gt; from &lt;a href=&quot;https://ferrous-systems.com&quot;&gt;Ferrous System&lt;/a&gt; taking on more team leadership tasks.
+(I am hyped about support for inner items, kudos Jonas!)
+I am also delighted with the open source community that formed around rust-analyzer.
+&lt;a href=&quot;https://github.com/edwin0cheng&quot;&gt;@edwin0cheng&lt;/a&gt;,
+&lt;a href=&quot;https://github.com/flodiebold&quot;&gt;@flodiebold&lt;/a&gt;,
+&lt;a href=&quot;https://github.com/kjeremy&quot;&gt;@kjeremy&lt;/a&gt;,
+&lt;a href=&quot;https://github.com/lnicola&quot;&gt;@lnicola&lt;/a&gt;,
+&lt;a href=&quot;https://github.com/SomeoneToIgnore&quot;&gt;@SomeoneToIgnore&lt;/a&gt;,
+&lt;a href=&quot;https://github.com/Veetaha&quot;&gt;@Veetaha&lt;/a&gt;,
+&lt;a href=&quot;https://github.com/Veykril&quot;&gt;@Veykril&lt;/a&gt;
+you are awesome, and rust-analyzer wouldn&amp;#8217;t be possible without you ❤️&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Finally, I can&amp;#8217;t help but notice that IntelliJ Rust which I left completely a while ago is doing better than ever.
+Overall, I must say I &lt;em&gt;am&lt;/em&gt; quite happy with today&amp;#8217;s state of Rust IDE tooling.
+The basics are firmly in place.
+Let&amp;#8217;s just finish the remaining 90%!&lt;/p&gt;
+&lt;/div&gt;</content><author><name>Aleksey Kladov</name></author><summary type="html">Hey, I have a short announcement to make: I am joining NEAR (sharded proof of stake public blockchain)! TL;DR: I&amp;#8217;ll be spending 60% of my time on WASM runtime for smart contracts and 40% on rust-analyzer.</summary></entry><entry><title type="html">For the Love of Macros</title><link href="https://matklad.github.io//2021/02/14/for-the-love-of-macros.html" rel="alternate" type="text/html" title="For the Love of Macros" /><published>2021-02-14T00:00:00+00:00</published><updated>2021-02-14T00:00:00+00:00</updated><id>https://matklad.github.io//2021/02/14/for-the-love-of-macros</id><content type="html" xml:base="https://matklad.github.io//2021/02/14/for-the-love-of-macros.html">&lt;div id=&quot;preamble&quot;&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I&amp;#8217;ve been re-reading Ted Kaminski blog about software design.
+I highly recommend all the posts, especially the earlier ones
+(here&amp;#8217;s &lt;a href=&quot;https://www.tedinski.com/2018/01/16/how-humans-write-programs.html&quot;&gt;the first&lt;/a&gt;).
+He manages to offer design advice which is both non-trivial and sound (a subjective judgment of course), a rare specimen!&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Anyway, one of the insights of the series is that, when designing an abstraction, we always face the inherent tradeoff between power and properties.
+The more we can express using a particular abstraction, the less we can say about the code using it.
+Our human bias for more expressive power is not inherent however.
+This is evident in programming language communities, where users unceasingly ask for new features and language designers say no.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Macros are a language feature which is very far in the &amp;#8220;more power&amp;#8221; side of the chart.
+Macros give you an ability to abstract over the source code.
+In exchange, you give up the ability to (automatically) reason about the surface syntax.
+As a specific &lt;a href=&quot;https://rust-analyzer.github.io/blog/2020/03/30/macros-vs-rename.html&quot;&gt;example&lt;/a&gt;, rename refactoring doesn&amp;#8217;t work 100% reliably in languages with powerful macro systems.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I do think that, in the ideal world, this is a wrong trade for a language which wants to scale to gigantic projects.
+The ability to automatically reason about and transform source code gains in importance when you add more programmers, more years, and more millions of lines of code.
+But take this with a huuuge grain of salt&amp;#8201;&amp;#8212;&amp;#8201;I am obviously biased, having spent several years developing Rust IDEs.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;That said, macros have a tremendous appeal&amp;#8201;&amp;#8212;&amp;#8201;they are a language designer&amp;#8217;s duct tape.
+Macros are rarely the best tool for the job, but they can do almost any job.
+The language design is incremental.
+A macro system relieves the design pressure by providing a ready poor man&amp;#8217;s substitute for many features.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;In this post, I want to explore what macros are used for in Rust.
+The intention is to find solutions which do not give up the &amp;#8220;reasoning about source code&amp;#8221; property.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;string-interpolation&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#string-interpolation&quot;&gt;&lt;/a&gt;String Interpolation&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;By far, the most common use-case is the &lt;code&gt;format!&lt;/code&gt; family of macros.
+The macro-less solution here is straightforward&amp;#8201;&amp;#8212;&amp;#8201;a string interpolation syntax:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;number&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;value&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;92&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;t&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;$key: ${values()}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;nd&quot;&gt;assert_eq!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.to_string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;number: 92&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;In Rust, interpolation probably shouldn&amp;#8217;t construct a string directly.
+Instead, it can produce a value implementing &lt;code&gt;Display&lt;/code&gt; (just like &lt;code&gt;format_args!&lt;/code&gt;), which can avoid allocations.
+An interesting extension would be to allow iterating over format string pieces.
+That way, the interpolation syntax could be used for things like SQL statements or command line arguments, without the fear of introducing injection vulnerabilities:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;arg&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;my dir&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cmd&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;ls $arg&quot;&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.to_cmd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;nd&quot;&gt;assert_eq!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cmd&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.to_string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;ls 'my dir'&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;&lt;a href=&quot;https://julialang.org/blog/2012/03/shelling-out-sucks/&quot;&gt;This post&lt;/a&gt; about Julia programming language explains the issue.
+&lt;a href=&quot;https://github.com/matklad/xshell&quot;&gt;&lt;code&gt;xshell&lt;/code&gt;&lt;/a&gt; crate implements this idea for Rust.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;derives&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#derives&quot;&gt;&lt;/a&gt;Derives&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I think the second most common, and probably the most important use of macros in Rust are derives.
+Rust is one of the few languages which gets equality right (and forbids comparing apples and oranges), but this crucially depends on the ability to &lt;code&gt;derive(Eq)&lt;/code&gt;.
+Common solutions in this space are special casing in the compiler (Haskell&amp;#8217;s &lt;code&gt;deriving&lt;/code&gt;) or runtime reflection.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;But the solution I am most excited about are C# &lt;a href=&quot;https://devblogs.microsoft.com/dotnet/introducing-c-source-generators/&quot;&gt;source generators&lt;/a&gt;.
+Which are nothing new&amp;#8201;&amp;#8212;&amp;#8201;this is just the old (source) code generation, just with a nice quality of implementation.
+You can supply custom code which gets run during the build and which can read existing sources and generate additional files, which are then added back to the compilation.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;The beauty of this solution is that it moves all the complexity out of the language and into the build system.
+This means that you get baseline tooling support for free.
+Goto definition for generated code? Just works.
+Want to step into some serialization code while debugging? There&amp;#8217;s actual source code on disk, so feel free to!
+You are more of a &lt;code&gt;printf&lt;/code&gt; person? Well, you&amp;#8217;d need to convince the build system to not stomp over your changes, but, otherwise, why not?&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Additionally, source generators turn out to be significantly &lt;em&gt;more&lt;/em&gt; expressive.
+They can call into the Roslyn compiler to analyzer the source code, so they are capable of type-directed code generation.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;To be useful, source generators require some language level support for splitting a single entity across several files.
+In C#, partial classes play this role.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;domain-specific-languages&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#domain-specific-languages&quot;&gt;&lt;/a&gt;Domain Specific Languages&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;The raison d&amp;#8217;être of macros is implementation of embedded DSLs.
+We want to introduce custom syntax within the language for succinctly modeling the program&amp;#8217;s domain.
+For example, a macro can be used to embed HTML fragments in Rust code.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;To me personally, eDSL is not problem to be solved, but just a problem.
+Introducing a new sublanguage (even if small) spends a lot of cognitive complexity budget.
+If you need it once in a while, better stick to just chaining together somewhat verbose function calls.
+If you need it a lot, it makes sense to introduce external DSL, with a compiler, a language server, and all the tooling that makes programming productive.
+To me, macro-based DSLs just don&amp;#8217;t fell like an interesting point on the cost-benefit curve.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;That being said, the Kotlin programming language solves the problem of strongly-typed, tooling-friendly DSL nicely (&lt;a href=&quot;https://kotlinlang.org/docs/type-safe-builders.html#how-it-works&quot;&gt;example&lt;/a&gt;).
+Infuriatingly, it&amp;#8217;s hard to point what &lt;em&gt;specifically&lt;/em&gt; is the solution.
+It&amp;#8217;s &amp;#8230;&amp;#8203; just the concrete syntax mostly.
+Here are some ingredients:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;ulist&quot;&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;The syntax for closures is &lt;code&gt;{ arg -&amp;gt; body }&lt;/code&gt;, or just &lt;code&gt;{ body }&lt;/code&gt;, so closures syntactically resemble blocks.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Extension methods (which are just sugar for static methods).&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Java style implicit &lt;code&gt;this&lt;/code&gt;, which introduces names into scope without an explicit declaration.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&quot;https://boats.gitlab.io/blog/post/the-problem-of-effects/&quot;&gt;TCP-preserving&lt;/a&gt; inline closures (this the single non-syntactical feature)&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Nonetheless, this was not enough to implement Jetpack Compose UI DSL, it also needs a compiler plugin.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;sqlx&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#sqlx&quot;&gt;&lt;/a&gt;sqlx&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;An interesting case of a DSL I want to call out is &lt;a href=&quot;https://docs.rs/sqlx/0.5.1/sqlx/macro.query.html&quot;&gt;&lt;code&gt;sqlx::query&lt;/code&gt;&lt;/a&gt;.
+It allows one to write code like this:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;account&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+  &lt;span class=&quot;nn&quot;&gt;sqlx&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;query!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;select (1) as id, 'Herp Derpinson' as name&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;nf&quot;&gt;.fetch_one&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;mut&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;conn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;.await&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;?&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;// anonymous struct has `#[derive(Debug)]` for convenience&lt;/span&gt;
+&lt;span class=&quot;nd&quot;&gt;println!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;{:?}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;account&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;nd&quot;&gt;println!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;{}: {}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;account&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;account&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;This I think is one of the few cases where eDSL does really pull its weight.
+I don&amp;#8217;t know how to do this without macros.
+Using string interpolation (the advanced version to protect from injection), it is possible to specify the query.
+Using a source generator, it is possible to check the syntax of the query and verity the types, to, eg, raise a type error in this case:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;i32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;f32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;query&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;select (1) as id, 'Herp Derpinson' as name&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;nf&quot;&gt;.fetch_one&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;mut&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;conn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;.await&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;?&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;But this won&amp;#8217;t be enough to generate an anonymous struct, or to get rid of dynamic casts.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;conditional-compilation&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#conditional-compilation&quot;&gt;&lt;/a&gt;Conditional Compilation&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Rust also uses macros for conditional compilation.
+This use case convincingly demonstrates &amp;#8220;lack of properties&amp;#8221; aspect of power.
+Dealing with feature combinations is a perpetual headache for Cargo.
+Users have to repeatedly recompile large chunks of the crate graph when feature flags change.
+Catching a type error on CI with &lt;code&gt;cargo test --no-default-features&lt;/code&gt; is pretty annoying, especially if you did run &lt;code&gt;cargo test&lt;/code&gt; before submitting a PR.
+&amp;#8220;Additive Features&amp;#8221; is an uncheckable wishful thinking.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;In this case, I don&amp;#8217;t know a good macro-less alternative.
+But, in principle, this seems doable, if conditional compilation is pushed further down the compiler pipeline, to the code generation and linking stage.
+Rather than discarding some code early during parsing, the compiler can select the platform-specific version just before producing machine code for a function.
+Before that, it checks that all conditionally-compiled versions of the function have the same interface.
+That way, platform-specific type errors are impossible.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;sect1&quot;&gt;
+&lt;h2 id=&quot;placeholder-syntax&quot;&gt;&lt;a class=&quot;anchor&quot; href=&quot;#placeholder-syntax&quot;&gt;&lt;/a&gt;Placeholder Syntax&lt;/h2&gt;
+&lt;div class=&quot;sectionbody&quot;&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;The final use-case I want to cover is that of a placeholder syntax.
+Rust&amp;#8217;s &lt;code&gt;macro_call!(&amp;#8230;&amp;#8203;)&lt;/code&gt; syntax carves a well-isolated region where anything goes, syntax wise, as long as the parenthesis are balanced.
+In theory, this allow language designers to experiment with provisional syntax before setting something in stone.
+In practice, it looks like this is not at all that beneficial?
+There was some opposition to stabilizing postfix &lt;code&gt;.await&lt;/code&gt; without going via intermediate period with &lt;code&gt;await!&lt;/code&gt; macro.
+And, after stabilization, all &lt;em&gt;syntax&lt;/em&gt; discussions were immediately forgotten?
+On the other hand, we did have &lt;code&gt;try! -&amp;gt; ?&lt;/code&gt; transition, and I don&amp;#8217;t think it helped to uncover any design pitfalls?
+At least, we managed to stabilize the &lt;a href=&quot;https://internals.rust-lang.org/t/can-try-and-use-the-into-trait-instead-of-from/6714&quot;&gt;unnecessary restrictive&lt;/a&gt; desugaring on that one.&lt;/p&gt;
+&lt;/div&gt;
+&lt;hr&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;For conclusion, I want to circle back to source generators.
+What &lt;em&gt;exactly&lt;/em&gt; makes them easier for tooling than macros?
+I think the following three properties do.
+&lt;em&gt;First&lt;/em&gt;, both input and output is, fundamentally, text.
+There&amp;#8217;s no intermediate representation (like token trees), which is used by this meta-programming facility.
+This means that it doesn&amp;#8217;t need to be integrated deeply with the compiler.
+Of course, internally the tool is free to parse, typecheck and transform the code however it likes.
+&lt;em&gt;Second&lt;/em&gt;, there is a phase distinction.
+Source generators are executed once, in unordered fashion.
+There&amp;#8217;s no back and forth between meta programming and name resolution, which, again, allows to keep &amp;#8220;meta&amp;#8221; part outside.
+&lt;em&gt;Third&lt;/em&gt;, source generators can only add code, they can not change the meaning of the existing code.
+This means that semantically sound source code transformations remains so in the presence of a code generator.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;That&amp;#8217;s all!
+Discussion on &lt;a href=&quot;https://old.reddit.com/r/rust/comments/ljnkwg/blog_post_for_the_love_of_macros/&quot;&gt;/r/rust&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;</content><author><name>Aleksey Kladov</name></author><summary type="html">I&amp;#8217;ve been re-reading Ted Kaminski blog about software design. I highly recommend all the posts, especially the earlier ones (here&amp;#8217;s the first). He manages to offer design advice which is both non-trivial and sound (a subjective judgment of course), a rare specimen!</summary></entry><entry><title type="html">A Better Rust Profiler</title><link href="https://matklad.github.io//2021/02/10/a-better-profiler.html" rel="alternate" type="text/html" title="A Better Rust Profiler" /><published>2021-02-10T00:00:00+00:00</published><updated>2021-02-10T00:00:00+00:00</updated><id>https://matklad.github.io//2021/02/10/a-better-profiler</id><content type="html" xml:base="https://matklad.github.io//2021/02/10/a-better-profiler.html">&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I want a better profiler for Rust.
+Here&amp;#8217;s what a rust-analyzer benchmark looks like:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt; 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;nd&quot;&gt;#[test]&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;benchmark_syntax_highlighting_parser&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;skip_slow_tests&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fixture&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;bench_fixture&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;glorious_old_parser&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;analysis&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;file_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;fixture&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fixture&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pt&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;bench&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;syntax highlighting parser&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;analysis&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;.highlight&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;file_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;.unwrap&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;.iter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;.filter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.highlight.tag&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;HlTag&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Symbol&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nn&quot;&gt;SymbolKind&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;.count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+  &lt;span class=&quot;nd&quot;&gt;assert_eq!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1629&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Here&amp;#8217;s how I want to profile it:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt; 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;nd&quot;&gt;#[test]&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;benchmark_syntax_highlighting_parser&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;skip_slow_tests&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fixture&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;bench_fixture&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;glorious_old_parser&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;analysis&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;file_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;fixture&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fixture&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;bench&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;syntax highlighting parser&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;hll&quot;&gt;    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;better_profiler&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;profile&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;/span&gt;    &lt;span class=&quot;n&quot;&gt;analysis&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;.highlight&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;file_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;.unwrap&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;.iter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;.filter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;.highlight.tag&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;HlTag&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Symbol&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nn&quot;&gt;SymbolKind&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;.count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+  &lt;span class=&quot;nd&quot;&gt;assert_eq!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1629&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;First, the profiler prints to stderr:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;warning: run with `--release`
+warning: add `debug=true` to Cargo.toml
+warning: set `RUSTFLAGS=&quot;-Cforce-frame-pointers=yes&quot;`
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Otherwise, if everything is setup correctly, the output is&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;Output is saved to:
+   ~/projects/rust-analyzer/profile-results/
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;The &lt;code&gt;profile-results&lt;/code&gt; folder contains the following:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;ulist&quot;&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;report.txt&lt;/code&gt; with&lt;/p&gt;
+&lt;div class=&quot;ulist&quot;&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;user, cpu, sys time&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;cpu instructions&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;stats for caches &amp;amp; branches a-la &lt;code&gt;pref-stat&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;top ten functions by cumulative time&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;top ten functions by self-time&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;top ten hot-spot&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;flamegraph.svg&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;data.smth&lt;/code&gt;, which can be fed into some existing profiler UI (kcachegrind, firefox profiler, etc).&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;report.html&lt;/code&gt; which contains a basic interactive UI.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;To tweak settings, the following API is available:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;better_profiler&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;profile&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;.output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;./other-dir/&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;.samples_per_second&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;999&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;.flamegraph&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Naturally, the following also works and produces an aggregate profile:&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;listingblock&quot;&gt;
+&lt;div class=&quot;content&quot;&gt;
+&lt;pre class=&quot;rouge highlight&quot;&gt;&lt;code data-lang=&quot;rust&quot;&gt;&lt;table class=&quot;linenotable&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;linenos gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;profile&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;nf&quot;&gt;interesting_computation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;not_interesting_computation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I don&amp;#8217;t know how this should work.
+I think I would be happy with a perf-based Linux-only implementation.
+The &lt;a href=&quot;https://github.com/jimblandy/perf-event&quot;&gt;perf-event&lt;/a&gt; crate by Jim Blandy (co-author of &amp;#8220;Programming Rust&amp;#8221;) is good.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Have I missed something?
+Does this tool already exist?
+Or is it impossible for some reason?&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Discussion on &lt;a href=&quot;https://old.reddit.com/r/rust/comments/lgqs35/blog_post_i_want_a_better_rust_profiler/&quot;&gt;/r/rust&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;</content><author><name>Aleksey Kladov</name></author><summary type="html">I want a better profiler for Rust. Here&amp;#8217;s what a rust-analyzer benchmark looks like:</summary></entry><entry><title type="html">ARCHITECTURE.md</title><link href="https://matklad.github.io//2021/02/06/ARCHITECTURE.md.html" rel="alternate" type="text/html" title="ARCHITECTURE.md" /><published>2021-02-06T00:00:00+00:00</published><updated>2021-02-06T00:00:00+00:00</updated><id>https://matklad.github.io//2021/02/06/ARCHITECTURE.md</id><content type="html" xml:base="https://matklad.github.io//2021/02/06/ARCHITECTURE.md.html">&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;If you maintain an open-source project in the range of 10k-200k lines of code, I strongly encourage you to add an &lt;code&gt;ARCHITECTURE&lt;/code&gt; document next to &lt;code&gt;README&lt;/code&gt; and &lt;code&gt;CONTRIBUTING&lt;/code&gt;.
+Before going into the details of why and how, I want to emphasize that this is not another &amp;#8220;docs are good, write more docs&amp;#8221; advice.
+I am pretty sloppy about documentation, and, e.g., I often use just &amp;#8220;simplify&amp;#8221; as a commit message.
+Nonetheless, I feel strongly about the issue, even to the point of pestering you :-)&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I have experience with both contributing to and maintaining open-source projects.
+One of the lessons I&amp;#8217;ve learned is that the biggest difference between an occasional contributor and a core developer lies in the knowledge about the physical architecture of the project.
+Roughly, it takes 2x more time to write a patch if you are unfamiliar with the project, but it takes 10x more time to figure out &lt;em&gt;where&lt;/em&gt; you should change the code.
+This difference might be hard to perceive if you&amp;#8217;ve been working with the project for a while.
+If I am new to a code base, I read each file as a sequence of logical chunks specified in some pseudo-random order.
+If I&amp;#8217;ve made significant contributions before, the perception is quite different.
+I have a mental map of the code in my head, so I no longer read sequentially.
+Instead, I just jump to where the thing should be, and, if it is not there, I move it.
+Mental map is the source of truth.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;I find &lt;code&gt;ARCHITECTURE&lt;/code&gt; file to be a low-effort high-leverage way to bridge this gap.
+As the name suggest, this file should describe the high-level architecture of the project.
+Keep it short: every recurring contributor will have to read it.
+Additionally, the shorter it is, the less likely it will be invalidated by some future change.
+This is the main rule of thumb for &lt;code&gt;ARCHITECTURE&lt;/code&gt;&amp;#8201;&amp;#8212;&amp;#8201;specify only things which are unlikely to frequently change.
+Don&amp;#8217;t try to keep it synchronized with code.
+Instead, revisit it a couple of times a year.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Start with a bird&amp;#8217;s eye overview of the problem being solved.
+Then, specify a more-or-less detailed codemap.
+Describe coarse-grained modules and how they relate to each other.
+Codemap should answer &amp;#8220;where&amp;#8217;s the thing that does X?&amp;#8221;.
+It should also answer &amp;#8220;what does the thing that I am looking at do?&amp;#8221;.
+Avoid going into details of &lt;em&gt;how&lt;/em&gt; each module works, pull this into separate documents or (better) inline documentation.
+Codemap is a map of a country, and not an atlas of maps of its states.
+Use this as a chance to reflect on the project structure.
+Are the things you want to put near each other in the codemap adjacent in &lt;code&gt;exa -TD&lt;/code&gt;?&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Do name important files, modules, and types.
+Do not directly link them (links go stale).
+Instead, encourage the reader to use symbol search to find the mentioned entities by name.
+This doesn&amp;#8217;t require maintenance, and will help to discover related, similarly named things.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Explicitly call-out architectural invariants.
+Often, important invariants are expressed as an &lt;em&gt;absence&lt;/em&gt; of something, and it&amp;#8217;s pretty hard to divine that from reading the code.
+Nothing in the model layer specifically doesn&amp;#8217;t depend on the views.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;Point out boundaries between layers and systems as well.
+A boundary implicitly contains information about the implementation of the system behind it.
+It even constraints all &lt;em&gt;possible&lt;/em&gt; implementations.
+But finding a boundary by just randomly looking at the code is hard&amp;#8201;&amp;#8212;&amp;#8201;good boundaries have measure zero.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;After finishing the codemap, add a separate section on cross-cutting concerns.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;paragraph&quot;&gt;
+&lt;p&gt;A good example of &lt;code&gt;ARCHITECTURE&lt;/code&gt; document is the one from rust-analyzer:
+&lt;a href=&quot;https://github.com/rust-analyzer/rust-analyzer/blob/d7c99931d05e3723d878bea5dc26766791fa4e69/docs/dev/architecture.md&quot;&gt;architecture.md&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;</content><author><name>Aleksey Kladov</name></author><summary type="html">If you maintain an open-source project in the range of 10k-200k lines of code, I strongly encourage you to add an ARCHITECTURE document next to README and CONTRIBUTING. Before going into the details of why and how, I want to emphasize that this is not another &amp;#8220;docs are good, write more docs&amp;#8221; advice. I am pretty sloppy about documentation, and, e.g., I often use just &amp;#8220;simplify&amp;#8221; as a commit message. Nonetheless, I feel strongly about the issue, even to the point of pestering you :-)</summary></entry></feed>
